@@ -1,8 +1,10 @@
 var sys = require('sys');
 var fs = require('fs');
 var http = require('http');
+var https = require('http');
 var env = process.env || process.ENV;
 var jshintPath = __dirname + '/jshint.js';
+var jsbeautifyPath = __dirname + '/beautify.js';
 var entities = {
   '&': '&amp;',
   '"': '&quot;',
@@ -17,8 +19,8 @@ function html(s) {
 /**
  * Downloads the latest JSHint version from jshint.com and invokes the callback when done.
  */
-function download(ready) {
-  var req = http.get({host: 'jshint.com', port: 80, path: '/jshint.js'}, function(res) {
+function download(httpOptions, filePath, ready) {
+  var fn = function(res) {
     if (res.statusCode == 200) {
       res.setEncoding('utf8');
       var data = '';
@@ -26,15 +28,23 @@ function download(ready) {
         data += chunk;
       });
       res.on('end', function() {
-        fs.writeFile(jshintPath, data, ready);
+        fs.writeFile(filePath, data, ready);
       });
     }
     else {
-      ready('Download of jshint.js failed. HTTP status code: ' + res.statusCode);
+      ready('Download of ' + httpOptions.path + ' failed. HTTP status code: ' + res.statusCode);
     }
-  }).on('error', function(err) {
-    ready('Download of jshint.js failed: ' + html(err.message));
-  });
+  };
+  var req;
+  if (httpOptions.port === 80) {
+    req = http.get(httpOptions, fn).on('error', function(err) {
+      ready('Download of ' + httpOptions.path + ' failed: ' + html(err.message));
+    });
+  } else {
+    req = https.get(httpOptions, fn).on('error', function(err) {
+      ready('Download of ' + httpOptions.path + ' failed: ' + html(err.message));
+    });
+  }
 }
 
 /**
@@ -47,15 +57,20 @@ function autoupdate(callback) {
     callback(err, (!err || fileExists) && require(jshintPath).JSHINT);
   }
   fs.stat(jshintPath, function(err, stats) {
-    fileExists = !err;
-    if (err || (Date.now() - Date.parse(stats.mtime)) / 1000 / 60 / 60 / 24 >= 1) {
-      return download(done);
-    }
-    done();
+    fs.stat(jsbeautifyPath, function(err2, stats2) {
+      fileExists = !err && !err;
+      if (err || err2 || (Date.now() - Date.parse(stats.mtime)) / 1000 / 60 / 60 / 24 >= 1 || (Date.now() - Date.parse(stats2.mtime)) / 1000 / 60 / 60 / 24 >= 1) {
+        return download({host: 'jshint.com', port: 80, path: '/jshint.js'}, jshintPath, function() {
+          download({host: 'raw.github.com', path: '/einars/js-beautify/master/beautify.js'}, jsbeautifyPath, done);
+        });
+      } else {
+        done();
+      }
+    });
   });
 }
 
-module.exports = function(options) {
+module.exports = function(options, callback) {
   autoupdate(function(err, jshint) {
     var body = '';
     if (err) {
@@ -86,6 +101,7 @@ module.exports = function(options) {
             body += '</a>';
           }
         });
+				err = jshint.errors;
       }
     }
     if (body.length > 0) {
@@ -94,5 +110,8 @@ module.exports = function(options) {
         process.exit(205); //show_html
       });
     }
+		if (callback) {
+			callback(err);
+		}
   });
 };

@@ -7,7 +7,29 @@
   <key>command</key>
   <string>#!/usr/bin/env node
 var env = process.env || process.ENV,
-    jshint = require(env.TM_BUNDLE_SUPPORT + '/jshint-tm');
+    jshint = require(env.TM_BUNDLE_SUPPORT + '/jshint-tm'),
+    js_beautify = require(env.TM_BUNDLE_SUPPORT + '/beautify').js_beautify,
+    stdin = process.stdin;;
+
+function beautify(err) {
+  if (err) {
+    return;
+  }
+  var input_text = [];
+  stdin.resume();
+  stdin.on('data', function(chunk) {
+    input_text.push(chunk.toString());
+  }).on('end',function() {
+    var source = input_text.join();
+    if (!err) {
+      source = js_beautify(source, {
+        indent_size: 1,
+        indent_char: '\t'
+      });
+    }
+    process.stdout.write(source);
+  });
+}
 
 jshint({
     es5: true,
@@ -23,13 +45,13 @@ jshint({
         "__filename",
         "__dirname"
     ]
-});</string>
+}, beautify);</string>
   <key>input</key>
   <string>none</string>
   <key>keyEquivalent</key>
   <string>@s</string>
   <key>name</key>
-  <string>Save &amp; Hint</string>
+  <string>Save, Beautify &amp; Hint</string>
   <key>output</key>
   <string>none</string>
   <key>scope</key>
