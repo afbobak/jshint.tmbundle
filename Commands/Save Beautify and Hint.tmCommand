@@ -9,7 +9,8 @@
 var env = process.env || process.ENV,
     jshint = require(env.TM_BUNDLE_SUPPORT + '/jshint-tm'),
     js_beautify = require(env.TM_BUNDLE_SUPPORT + '/beautify').js_beautify,
-    stdin = process.stdin;;
+    stdin = process.stdin;
+    stdout = process.stdout;
 
 function beautify(err) {
   if (err) {
@@ -21,13 +22,16 @@ function beautify(err) {
     input_text.push(chunk.toString());
   }).on('end',function() {
     var source = input_text.join();
-    if (!err) {
-      source = js_beautify(source, {
-        indent_size: 1,
-        indent_char: '\t'
-      });
+    var beautified = js_beautify(source, {
+      indent_size: 1,
+      indent_char: '\t'
+    });
+    if (beautified === source) {
+      process.exit(200); // nothing to do, discard output
+    } else {
+      stdout.end(beautified);
+      process.exit(202); // replace document
     }
-    process.stdout.write(source);
   });
 }
 
