@@ -60,9 +60,7 @@ function autoupdate(callback) {
     fs.stat(jsbeautifyPath, function(err2, stats2) {
       fileExists = !err && !err;
       if (err || err2 || (Date.now() - Date.parse(stats.mtime)) / 1000 / 60 / 60 / 24 >= 1 || (Date.now() - Date.parse(stats2.mtime)) / 1000 / 60 / 60 / 24 >= 1) {
-        return download({host: 'jshint.com', port: 80, path: '/jshint.js'}, jshintPath, function() {
-          download({host: 'raw.github.com', path: '/einars/js-beautify/master/beautify.js'}, jsbeautifyPath, done);
-        });
+        return download({host: 'jshint.com', port: 80, path: '/jshint.js'}, jshintPath, done);
       } else {
         done();
       }

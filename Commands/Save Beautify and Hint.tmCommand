@@ -51,7 +51,7 @@ jshint({
     ]
 }, beautify);</string>
   <key>input</key>
-  <string>none</string>
+  <string>document</string>
   <key>keyEquivalent</key>
   <string>@s</string>
   <key>name</key>
