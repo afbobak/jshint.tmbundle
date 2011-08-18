@@ -24,7 +24,8 @@ function beautify(err) {
     var source = input_text.join();
     var beautified = js_beautify(source, {
       indent_size: 1,
-      indent_char: '\t'
+      indent_char: '\t',
+      jslint_happy: true
     });
     if (beautified === source) {
       process.exit(200); // nothing to do, discard output
